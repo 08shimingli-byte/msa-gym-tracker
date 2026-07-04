@@ -23,6 +23,9 @@ public class SetsController(AppDbContext db) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(Set set)
     {
+        var exerciseExists = await db.Exercises.AnyAsync(e => e.Id == set.ExerciseId);
+        if (!exerciseExists) return BadRequest("Exercise does not exist.");
+
         db.Sets.Add(set);
         await db.SaveChangesAsync();
         return CreatedAtAction(nameof(GetById), new { id = set.Id }, set);
