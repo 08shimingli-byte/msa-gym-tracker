@@ -16,6 +16,17 @@ public class WorkoutsControllerTests
         return new AppDbContext(options);
     }
 
+    private async Task<AppDbContext> GetSeededDb()
+    {
+        var db = GetDb();
+        db.Exercises.Add(new Exercise { Name = "Bench Press", MuscleGroup = MuscleGroup.Chest });
+        db.Workouts.Add(new Workout { Name = "Push Day", Date = DateTime.Now });
+        await db.SaveChangesAsync();
+        db.Sets.Add(new Set { ExerciseId = 1, WorkoutId = 1, WeightKg = 60, Reps = 12, Sets = 3 });
+        await db.SaveChangesAsync();
+        return db;
+    }
+
     [Fact]
     public async Task GetAll_ReturnsEmptyList_WhenNoWorkouts()
     {
@@ -46,6 +57,22 @@ public class WorkoutsControllerTests
     }
 
     [Fact]
+    public async Task GetAll_IncludesSetsWithExercises()
+    {
+        var db = await GetSeededDb();
+        var controller = new WorkoutsController(db);
+
+        var result = await controller.GetAll();
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var workouts = Assert.IsType<List<Workout>>(ok.Value);
+
+        Assert.Single(workouts);
+        Assert.Single(workouts[0].Sets);
+        Assert.NotNull(workouts[0].Sets[0].Exercise);
+        Assert.Equal("Bench Press", workouts[0].Sets[0].Exercise!.Name);
+    }
+
+    [Fact]
     public async Task GetById_ReturnsWorkout_WhenExists()
     {
         var db = GetDb();
@@ -57,6 +84,21 @@ public class WorkoutsControllerTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var workout = Assert.IsType<Workout>(ok.Value);
         Assert.Equal("Push Day", workout.Name);
+    }
+
+    [Fact]
+    public async Task GetById_IncludesSetsWithExercises()
+    {
+        var db = await GetSeededDb();
+        var controller = new WorkoutsController(db);
+
+        var result = await controller.GetById(1);
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var workout = Assert.IsType<Workout>(ok.Value);
+
+        Assert.Single(workout.Sets);
+        Assert.NotNull(workout.Sets[0].Exercise);
+        Assert.Equal("Bench Press", workout.Sets[0].Exercise!.Name);
     }
 
     [Fact]
@@ -95,6 +137,17 @@ public class WorkoutsControllerTests
         Assert.IsType<OkObjectResult>(result);
         var workout = await db.Workouts.FindAsync(1);
         Assert.Equal("Updated Push Day", workout!.Name);
+    }
+
+    [Fact]
+    public async Task Update_ReturnsNotFound_WhenNotExists()
+    {
+        var db = GetDb();
+        var controller = new WorkoutsController(db);
+        var updated = new Workout { Name = "Updated Push Day", Date = DateTime.Now };
+
+        var result = await controller.Update(999, updated);
+        Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]

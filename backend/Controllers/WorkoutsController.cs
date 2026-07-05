@@ -11,13 +11,17 @@ public class WorkoutsController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll() =>
-        Ok(await db.Workouts.Include(w => w.Sets).ThenInclude(s => s.Exercise).ToListAsync());
+        Ok(await db.Workouts
+            .Include(w => w.Sets)
+            .ThenInclude(s => s.Exercise)
+            .ToListAsync());
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
         var workout = await db.Workouts
-            .Include(w => w.Sets).ThenInclude(s => s.Exercise)
+            .Include(w => w.Sets)
+            .ThenInclude(s => s.Exercise)
             .FirstOrDefaultAsync(w => w.Id == id);
         return workout is null ? NotFound() : Ok(workout);
     }
