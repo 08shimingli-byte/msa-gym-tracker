@@ -20,6 +20,7 @@ public class SetsControllerTests
     {
         var db = GetDb();
         db.Exercises.Add(new Exercise { Name = "Bench Press", MuscleGroup = MuscleGroup.Chest });
+        db.Workouts.Add(new Workout { Name = "Push Day", Date = DateTime.Now });
         await db.SaveChangesAsync();
         return db;
     }
@@ -41,7 +42,7 @@ public class SetsControllerTests
     {
         var db = await GetSeededDb();
         var controller = new SetsController(db);
-        var set = new Set { ExerciseId = 1, WeightKg = 60, Reps = 12, Sets = 3 };
+        var set = new Set { ExerciseId = 1, WorkoutId = 1, WeightKg = 60, Reps = 12, Sets = 3 };
 
         var result = await controller.Create(set);
         Assert.IsType<CreatedAtActionResult>(result);
@@ -53,7 +54,18 @@ public class SetsControllerTests
     {
         var db = await GetSeededDb();
         var controller = new SetsController(db);
-        var set = new Set { ExerciseId = 999, WeightKg = 60, Reps = 12, Sets = 3 };
+        var set = new Set { ExerciseId = 999, WorkoutId = 1, WeightKg = 60, Reps = 12, Sets = 3 };
+
+        var result = await controller.Create(set);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Create_ReturnsBadRequest_WhenWorkoutNotExists()
+    {
+        var db = await GetSeededDb();
+        var controller = new SetsController(db);
+        var set = new Set { ExerciseId = 1, WorkoutId = 999, WeightKg = 60, Reps = 12, Sets = 3 };
 
         var result = await controller.Create(set);
         Assert.IsType<BadRequestObjectResult>(result);
@@ -63,7 +75,7 @@ public class SetsControllerTests
     public async Task GetById_ReturnsSet_WhenExists()
     {
         var db = await GetSeededDb();
-        db.Sets.Add(new Set { ExerciseId = 1, WeightKg = 60, Reps = 12, Sets = 3 });
+        db.Sets.Add(new Set { ExerciseId = 1, WorkoutId = 1, WeightKg = 60, Reps = 12, Sets = 3 });
         await db.SaveChangesAsync();
 
         var controller = new SetsController(db);
@@ -86,11 +98,11 @@ public class SetsControllerTests
     public async Task Update_UpdatesSet_WhenExists()
     {
         var db = await GetSeededDb();
-        db.Sets.Add(new Set { ExerciseId = 1, WeightKg = 60, Reps = 12, Sets = 3 });
+        db.Sets.Add(new Set { ExerciseId = 1, WorkoutId = 1, WeightKg = 60, Reps = 12, Sets = 3 });
         await db.SaveChangesAsync();
 
         var controller = new SetsController(db);
-        var updated = new Set { ExerciseId = 1, WeightKg = 80, Reps = 8, Sets = 3 };
+        var updated = new Set { ExerciseId = 1, WorkoutId = 1, WeightKg = 80, Reps = 8, Sets = 3 };
         var result = await controller.Update(1, updated);
 
         var ok = Assert.IsType<OkObjectResult>(result);
@@ -99,10 +111,38 @@ public class SetsControllerTests
     }
 
     [Fact]
+    public async Task Update_ReturnsBadRequest_WhenExerciseNotExists()
+    {
+        var db = await GetSeededDb();
+        db.Sets.Add(new Set { ExerciseId = 1, WorkoutId = 1, WeightKg = 60, Reps = 12, Sets = 3 });
+        await db.SaveChangesAsync();
+
+        var controller = new SetsController(db);
+        var updated = new Set { ExerciseId = 999, WorkoutId = 1, WeightKg = 80, Reps = 8, Sets = 3 };
+        var result = await controller.Update(1, updated);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Update_ReturnsBadRequest_WhenWorkoutNotExists()
+    {
+        var db = await GetSeededDb();
+        db.Sets.Add(new Set { ExerciseId = 1, WorkoutId = 1, WeightKg = 60, Reps = 12, Sets = 3 });
+        await db.SaveChangesAsync();
+
+        var controller = new SetsController(db);
+        var updated = new Set { ExerciseId = 1, WorkoutId = 999, WeightKg = 80, Reps = 8, Sets = 3 };
+        var result = await controller.Update(1, updated);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
     public async Task Delete_RemovesSet_WhenExists()
     {
         var db = await GetSeededDb();
-        db.Sets.Add(new Set { ExerciseId = 1, WeightKg = 60, Reps = 12, Sets = 3 });
+        db.Sets.Add(new Set { ExerciseId = 1, WorkoutId = 1, WeightKg = 60, Reps = 12, Sets = 3 });
         await db.SaveChangesAsync();
 
         var controller = new SetsController(db);

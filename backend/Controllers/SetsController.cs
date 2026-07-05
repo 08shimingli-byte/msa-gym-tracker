@@ -26,6 +26,11 @@ public class SetsController(AppDbContext db) : ControllerBase
         var exerciseExists = await db.Exercises.AnyAsync(e => e.Id == set.ExerciseId);
         if (!exerciseExists) return BadRequest("Exercise does not exist.");
 
+        var workoutExists = await db.Workouts.AnyAsync(w => w.Id == set.WorkoutId);
+        if (!workoutExists) return BadRequest("Workout does not exist.");
+
+        set.Exercise = null;
+        set.Workout = null;
         db.Sets.Add(set);
         await db.SaveChangesAsync();
         return CreatedAtAction(nameof(GetById), new { id = set.Id }, set);
@@ -40,10 +45,14 @@ public class SetsController(AppDbContext db) : ControllerBase
         var exerciseExists = await db.Exercises.AnyAsync(e => e.Id == updated.ExerciseId);
         if (!exerciseExists) return BadRequest("Exercise does not exist.");
 
+        var workoutExists = await db.Workouts.AnyAsync(w => w.Id == updated.WorkoutId);
+        if (!workoutExists) return BadRequest("Workout does not exist.");
+
         set.WeightKg = updated.WeightKg;
         set.Reps = updated.Reps;
         set.Sets = updated.Sets;
         set.ExerciseId = updated.ExerciseId;
+        set.WorkoutId = updated.WorkoutId;
         await db.SaveChangesAsync();
         return Ok(set);
     }
